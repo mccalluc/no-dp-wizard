@@ -57,10 +57,3 @@ def analyze_tsv(tsv_path: Path):
     ]
     exprs = [expr for pair in pairs for expr in pair]
     return lf.select(*exprs).collect().to_dicts()
-
-
-def wizard():
-    analysis = analyze_tsv(Path(argv[1]))
-    assert len(analysis) == 1
-    for k, v in analysis[0].items():
-        print(f"{k}: {v}")
