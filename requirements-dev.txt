@@ -1,0 +1,4 @@
+pytest
+flit
+
+-r requirements.txt
