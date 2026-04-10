@@ -8,7 +8,6 @@ import polars as pl
 import re
 from math import log
 
-
 package_root = Path(__file__).parent
 __version__ = (package_root / "VERSION").read_text().strip()
 
@@ -38,12 +37,18 @@ def percentile_expr(col, percentile):
     floor_or_ceil = "floor" if percentile < 50 else "ceil"
     log_expr = pl.col(col).quantile(percentile / 100).log10()
     exp_expr = getattr(log_expr, floor_or_ceil)().mul(log(10)).exp()
-    return exp_expr.round().cast(pl.Int32).alias(f"{col}_{percentile}_percent")
+    return (
+        exp_expr.round()
+        .cast(pl.Int32, strict=False)
+        .alias(f"{col}_{percentile}_percent")
+    )
 
 
 def analyze_tsv(tsv_path: Path):
     csv_path = convert_to_csv(tsv_path)
-    lf = pl.scan_csv(csv_path)
+    # Read the whole file to infer schema,
+    # so there are no surprises, and no data is dropped.
+    lf = pl.scan_csv(csv_path, infer_schema_length=None)
     all_numeric = [k for k, v in lf.collect_schema().items() if v.is_numeric()]
     first_numeric = []
     stems = set()
