@@ -1,0 +1,4 @@
+int_1	int_2	float_1	float_2	str_1	str_2
+1	10	1.0	10.0	A	X
+2   20  2.0	20.0	B	Y
+3	30	3.0	30.0	C	Z
