@@ -6,6 +6,7 @@ import csv
 from pathlib import Path
 import polars as pl
 import re
+from math import log
 
 package_root = Path(__file__).parent
 __version__ = (package_root / "VERSION").read_text().strip()
@@ -32,10 +33,17 @@ def convert_to_csv(tab_path: Path) -> Path:
     return csv_path
 
 
+def percentile_expr(col, percentile):
+    floor_or_ceil = "floor" if percentile < 50 else "ceil"
+    log_expr = pl.col(col).quantile(percentile / 100).log10()
+    exp_expr = getattr(log_expr, floor_or_ceil)().mul(log(10)).exp()
+    return exp_expr.round().cast(pl.Int32).alias(f"{col}_{percentile}_percent")
+
+
 def analyze_tsv(tsv_path: Path):
     csv_path = convert_to_csv(tsv_path)
     lf = pl.scan_csv(csv_path)
-    all_numeric =  [k for k, v in lf.collect_schema().items() if v.is_numeric()]
+    all_numeric = [k for k, v in lf.collect_schema().items() if v.is_numeric()]
     first_numeric = []
     stems = set()
     for col in all_numeric:
@@ -44,9 +52,7 @@ def analyze_tsv(tsv_path: Path):
             first_numeric.append(col)
             stems.add(stem)
     pairs = [
-        [pl.col(col).quantile(0.1).alias(f"{col}_10_percent"),
-         pl.col(col).quantile(0.9).alias(f"{col}_90_percent")]
-          for col in first_numeric
+        [percentile_expr(col, 10), percentile_expr(col, 90)] for col in first_numeric
     ]
     exprs = [expr for pair in pairs for expr in pair]
     return lf.select(*exprs).collect().to_dicts()
