@@ -7,7 +7,7 @@ from pathlib import Path
 import polars as pl
 import re
 from math import log
-from sys import argv
+
 
 package_root = Path(__file__).parent
 __version__ = (package_root / "VERSION").read_text().strip()
