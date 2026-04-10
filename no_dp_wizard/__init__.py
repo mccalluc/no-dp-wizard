@@ -5,6 +5,7 @@ Test bed to explore what kind of summary data currators can use
 import csv
 from pathlib import Path
 import polars as pl
+import re
 
 package_root = Path(__file__).parent
 __version__ = (package_root / "VERSION").read_text().strip()
@@ -33,4 +34,19 @@ def convert_to_csv(tab_path: Path) -> Path:
 
 def analyze_tsv(tsv_path: Path):
     csv_path = convert_to_csv(tsv_path)
-    return pl.scan_csv(csv_path).agg(pl.col("int_1").quantile(0.1)).collect()
+    lf = pl.scan_csv(csv_path)
+    all_numeric =  [k for k, v in lf.collect_schema().items() if v.is_numeric()]
+    first_numeric = []
+    stems = set()
+    for col in all_numeric:
+        stem = re.sub(r"[^a-zA-Z]*\d+", "", col)
+        if stem not in stems:
+            first_numeric.append(col)
+            stems.add(stem)
+    pairs = [
+        [pl.col(col).quantile(0.1).alias(f"{col}_10_percent"),
+         pl.col(col).quantile(0.9).alias(f"{col}_90_percent")]
+          for col in first_numeric
+    ]
+    exprs = [expr for pair in pairs for expr in pair]
+    return lf.select(*exprs).collect().to_dicts()
