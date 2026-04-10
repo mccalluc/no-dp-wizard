@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "no_dp_wizard"
-authors = [{name = "Chuck McCallum", email = "contact@opendp.org"}]
+authors = [{name = "Chuck McCallum", email = "mccallucc@gmail.com"}]
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -15,3 +15,6 @@ dependencies = [
 
 [project.urls]
 Home = "https://github.com/mccalluc/no-dp-wizard"
+
+[project.scripts]
+wizard = "no_dp_wizard:wizard"
